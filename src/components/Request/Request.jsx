@@ -5,18 +5,20 @@ import Helmet from 'react-helmet';
 import CircularProgress from 'material-ui/CircularProgress';
 import RaisedButton from 'material-ui/RaisedButton';
 import TextField from 'material-ui/TextField';
-import strings from '../../lang';
-import { postRequest } from '../../actions';
+import { postRequest } from '../../actions/requestActions';
 
 class Request extends React.Component {
-  constructor() {
-    super();
-    this.state = {};
-    this.handleSubmit = this.handleSubmit.bind(this);
+  static propTypes = {
+    dispatchPostRequest: PropTypes.func,
+    progress: PropTypes.number,
+    error: PropTypes.string,
+    loading: PropTypes.bool,
+    strings: PropTypes.shape({}),
   }
 
-  componentWillMount() {
-    this.setState({ matchId: window.location.hash.slice(1) });
+  constructor() {
+    super();
+    this.state = { matchId: window.location.hash.slice(1) };
   }
 
   componentDidMount() {
@@ -25,13 +27,15 @@ class Request extends React.Component {
     }
   }
 
-  handleSubmit() {
+  handleSubmit = () => {
     const { dispatchPostRequest } = this.props;
     dispatchPostRequest(this.state.matchId);
-  }
+  };
 
   render() {
-    const { progress, error, loading } = this.props;
+    const {
+      progress, error, loading, strings,
+    } = this.props;
     const progressIndicator = (progress ?
       <CircularProgress value={progress} mode="determinate" /> :
       <CircularProgress value={progress} mode="indeterminate" />);
@@ -52,19 +56,13 @@ class Request extends React.Component {
   }
 }
 
-Request.propTypes = {
-  dispatchPostRequest: PropTypes.func,
-  progress: PropTypes.number,
-  error: PropTypes.string,
-  loading: PropTypes.bool,
-};
-
 const mapStateToProps = (state) => {
   const { error, loading, progress } = state.app.request;
   return {
     error,
     loading,
     progress,
+    strings: state.app.strings,
   };
 };
 

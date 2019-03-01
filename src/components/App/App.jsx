@@ -5,14 +5,13 @@ import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import darkBaseTheme from 'material-ui/styles/baseThemes/darkBaseTheme';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import Helmet from 'react-helmet';
+import { Route, Switch, Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { Route } from 'react-router-dom';
-import strings from '../../lang';
+import Header from '../Header';
 import Player from '../Player';
 import Home from '../Home';
 import Search from '../Search';
 import Explorer from '../Explorer';
-// import FourOhFour from '../FourOhFour';
 import Heroes from '../Heroes';
 import Request from '../Request';
 import Distributions from '../Distributions';
@@ -21,35 +20,15 @@ import Matches from '../Matches';
 import Teams from '../Teams';
 // import Assistant from '../Assistant';
 import Records from '../Records';
-// import Predictions from '../Predictions';
+import Scenarios from '../Scenarios';
+import Predictions from '../Predictions';
 import Meta from '../Meta';
-import Header from '../Header';
+import Api from '../Api';
 import Footer from '../Footer';
+import FourOhFour from '../FourOhFour';
 import constants from '../constants';
-
-const muiTheme = {
-  fontFamily: constants.fontFamily,
-  card: { fontWeight: constants.fontWeightNormal },
-  badge: { fontWeight: constants.fontWeightNormal },
-  subheader: { fontWeight: constants.fontWeightNormal },
-  raisedButton: { fontWeight: constants.fontWeightNormal },
-  flatButton: { fontWeight: constants.fontWeightNormal },
-  inkBar: {
-    backgroundColor: constants.colorBlue,
-  },
-  palette: {
-    textColor: constants.textColorPrimary,
-    primary1Color: constants.colorBlue,
-    canvasColor: constants.primarySurfaceColor,
-    borderColor: constants.dividerColor,
-  },
-  tabs: {
-    backgroundColor: constants.primarySurfaceColor,
-    textColor: constants.textColorPrimary,
-    selectedTextColor: constants.textColorPrimary,
-  },
-  button: { height: 38 },
-};
+import muiTheme from './muiTheme';
+import GlobalStyle from './GlobalStyle';
 
 const StyledDiv = styled.div`
   transition: ${constants.normalTransition};
@@ -61,20 +40,57 @@ const StyledDiv = styled.div`
   background-image: ${props => (props.location.pathname === '/' ? 'url("/assets/images/home-background.png")' : '')};
   background-position: ${props => (props.location.pathname === '/' ? 'center top' : '')};
   background-repeat: ${props => (props.location.pathname === '/' ? 'no-repeat' : '')};
+
+  #back2Top {
+    position: fixed;
+    left: auto;
+    right: 0px;
+    top: auto;
+    bottom: 20px;
+    outline: none;
+    color: rgb(196, 196, 196);
+    text-align: center;
+    outline: none;
+    border: none;
+    background-color: rgba(0,0,0,0.3);
+    width: 40px;
+    font-size: 14px;
+    border-radius: 2px;
+    cursor: pointer;
+    z-index: 999999;
+    opacity: 0;
+    display: block;
+    pointer-events: none;
+    -webkit-transform: translate3d(0,0,0);
+    padding: 3px;
+    transition: opacity 0.3s ease-in-out;
+
+    & #back2TopTxt {
+      font-size: 10px;
+      line-height: 12px;
+      text-align: center;
+      margin-bottom: 3px;
+    }
+  }
+
+  #back2Top:hover {
+    background-color: rgb(26, 108, 239);
+  }
 `;
 
 const StyledBodyDiv = styled.div`
   padding: 25px;
   flex-grow: 1;
 
-  @media only screen and (min-width: 1200px) {
-    width: 1200px;
+  @media only screen and (min-width: ${constants.appWidth}px) {
+    width: ${constants.appWidth}px;
     margin: auto;
   }
 `;
 
 const AdBannerDiv = styled.div`
   text-align: center;
+  margin-bottom: 5px;
 
   & img {
     margin-top: 10px;
@@ -83,68 +99,129 @@ const AdBannerDiv = styled.div`
 `;
 
 class App extends React.Component {
-  componentWillUpdate(nextProps) {
-    if (this.props.location.key !== nextProps.location.key) {
+  static propTypes = {
+    width: PropTypes.number,
+    location: PropTypes.shape({
+      key: PropTypes.string,
+    }),
+    strings: PropTypes.shape({}),
+  };
+
+  componentDidMount() {
+    window.addEventListener('scroll', this.handleScroll);
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.location.key !== prevProps.location.key) {
       window.scrollTo(0, 0);
     }
   }
 
+  componentWillUnmount() {
+    window.removeEventListener('scroll', this.handleScroll);
+  }
+
+  setBack2TopRef = (node) => {
+    this.back2Top = node;
+  }
+
+  handleScroll = () => {
+    const { style } = this.back2Top;
+    if (document.body.scrollTop > 1000 || document.documentElement.scrollTop > 1000) {
+      style.opacity = 1;
+      style.pointerEvents = 'auto';
+    } else {
+      style.opacity = 0;
+      style.pointerEvents = 'none';
+    }
+  }
+
+  handleBack2TopClick = () => {
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+  }
+
   render() {
-    const { params, width, location } = this.props;
+    const {
+      width, location, strings,
+    } = this.props;
+
+    const navbarPages = [
+      <Link key="header_explorer" to="/explorer">{strings.header_explorer}</Link>,
+      <Link key="header_meta" to="/meta">{strings.header_meta}</Link>,
+      <Link key="header_matches" to="/matches">{strings.header_matches}</Link>,
+      <Link key="header_teams" to="/teams">{strings.header_teams}</Link>,
+      <Link key="header_heroes" to="/heroes">{strings.header_heroes}</Link>,
+      <Link key="header_distributions" to="/distributions">{strings.header_distributions}</Link>,
+      <Link key="header_records" to="/records">{strings.header_records}</Link>,
+      <Link key="header_scenarios" to="/scenarios">{strings.header_scenarios}</Link>,
+      <Link key="header_api" to="/api-keys">{strings.header_api}</Link>,
+      // <Link key="header_predictions" to="/predictions">TI Predictions</Link>,
+      // <Link key="header_assistant" to="/assistant">Assistant</Link>,
+    ];
+
+    const includeAds = !['/', '/api-keys'].includes(location.pathname);
     return (
       <MuiThemeProvider muiTheme={getMuiTheme(darkBaseTheme, muiTheme)}>
+        <GlobalStyle />
         <StyledDiv {...this.props}>
           <Helmet
             defaultTitle={strings.title_default}
             titleTemplate={strings.title_template}
           />
-          <Header params={params} location={location} />
+          <Header location={location} navbarPages={navbarPages} />
           <AdBannerDiv>
-            { location.pathname !== '/' &&
+            { includeAds &&
               <a href="http://www.vpgame.com/?lang=en_us">
                 <img src="/assets/images/vp-banner.jpg" alt="" />
               </a>
             }
           </AdBannerDiv>
           <StyledBodyDiv {...this.props}>
-            <Route exact path="/" component={Home} />
-            <Route exact path="/matches/:matchId?/:info?" component={Matches} />
-            <Route exact path="/players/:playerId/:info?/:subInfo?" component={Player} />
-            <Route exact path="/heroes/:heroId?/:info?" component={Heroes} />
-            <Route exact path="/teams/:teamId?/:info?" component={Teams} />
-            <Route exact path="/distributions/:info?" component={Distributions} />
-            <Route exact path="/request" component={Request} />
-            <Route exact path="/status" component={Status} />
-            <Route exact path="/explorer" component={Explorer} />
-            <Route exact path="/search" component={Search} />
-            <Route exact path="/records/:info?" component={Records} />
-            <Route exact path="/meta" component={Meta} />
+            <Switch>
+              <Route exact path="/" component={Home} />
+              <Route exact path="/matches/:matchId?/:info?" component={Matches} />
+              <Route exact path="/players/:playerId/:info?/:subInfo?" component={Player} />
+              <Route exact path="/heroes/:heroId?/:info?" component={Heroes} />
+              <Route exact path="/teams/:teamId?/:info?" component={Teams} />
+              <Route exact path="/distributions/:info?" component={Distributions} />
+              <Route exact path="/request" component={Request} />
+              <Route exact path="/status" component={Status} />
+              <Route exact path="/explorer" component={Explorer} />
+              <Route exact path="/search" component={Search} />
+              <Route exact path="/records/:info?" component={Records} />
+              <Route exact path="/meta" component={Meta} />
+              <Route exact path="/scenarios/:info?" component={Scenarios} />
+              <Route exact path="/predictions" component={Predictions} />
+              <Route exact path="/api-keys" component={Api} />
+              <Route component={FourOhFour} />
+            </Switch>
           </StyledBodyDiv>
           <AdBannerDiv>
-            { location.pathname !== '/' &&
-              <a href="https://glhf.rivalry.gg/get-started-dota/?utm_source=opendota&utm_medium=link&utm_campaign=opendota">
-                <img src="/assets/images/rivalry-banner.png" alt="" />
-              </a>
-            }
-            { location.pathname !== '/' &&
+            { includeAds &&
               <div style={{ fontSize: '12px' }}>
-                {strings.home_sponsored_by} <a href="https://www.rivalry.gg">Rivalry</a>
+                <a href="https://www.rivalry.gg/opendota">
+                  <img src="/assets/images/rivalry-banner.gif" alt="" />
+                </a>
+                <div>
+                  {strings.home_sponsored_by} <a href="https://www.rivalry.gg/opendota">Rivalry</a>
+                </div>
               </div>
             }
           </AdBannerDiv>
           <Footer location={location} width={width} />
+          <button ref={this.setBack2TopRef} id="back2Top" title={strings.back2Top} onClick={this.handleBack2TopClick}>
+            <div>&#9650;</div>
+            <div id="back2TopTxt">{strings.back2Top}</div>
+          </button>
         </StyledDiv>
       </MuiThemeProvider>
     );
   }
 }
 
-App.propTypes = {
-  params: PropTypes.shape({}),
-  width: PropTypes.number,
-  location: PropTypes.shape({
-    key: PropTypes.string,
-  }),
-};
+const mapStateToProps = state => ({
+  strings: state.app.strings,
+});
 
-export default connect()(App);
+export default connect(mapStateToProps)(App);
